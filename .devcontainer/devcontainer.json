@@ -1,1 +1,95 @@
-sadad
+{
+  "name": "LLM Engineers Handbook",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
+  },
+
+  // ── Features ────────────────────────────────────────────────────────────────
+  "features": {
+    // Docker-in-Docker so `poetry poe local-infrastructure-up` works
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "dockerDashComposeVersion": "v2"
+    },
+    // AWS CLI >= 2.15.42
+    "ghcr.io/devcontainers/features/aws-cli:1": {
+      "version": "2.15.42"
+    },
+    // Git >= 2.44.0 (Codespaces ships an older version)
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "latest",
+      "ppa": true
+    }
+  },
+
+  // ── Port forwarding ──────────────────────────────────────────────────────────
+  "forwardPorts": [
+    8237,   // ZenML dashboard
+    6333,   // Qdrant REST API + dashboard
+    27017,  // MongoDB
+    8000    // FastAPI inference service
+  ],
+  "portsAttributes": {
+    "8237": { "label": "ZenML Dashboard",     "onAutoForward": "notify" },
+    "6333": { "label": "Qdrant",              "onAutoForward": "notify" },
+    "27017": { "label": "MongoDB",            "onAutoForward": "silent" },
+    "8000": { "label": "Inference API",       "onAutoForward": "notify" }
+  },
+
+  // ── Lifecycle scripts ────────────────────────────────────────────────────────
+  "onCreateCommand": "bash .devcontainer/on-create.sh",
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "postStartCommand": "bash .devcontainer/post-start.sh",
+
+  // ── VS Code settings ─────────────────────────────────────────────────────────
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/home/vscode/.pyenv/versions/3.11.8/bin/python",
+        "python.terminal.activateEnvironment": true,
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff",
+          "editor.formatOnSave": true,
+          "editor.codeActionsOnSave": { "source.fixAll.ruff": "explicit" }
+        },
+        "editor.rulers": [100],
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "files.exclude": {
+          "**/__pycache__": true,
+          "**/.pytest_cache": true
+        }
+      },
+      "extensions": [
+        // Python
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        // Docker & containers
+        "ms-azuretools.vscode-docker",
+        "ms-vscode-remote.remote-containers",
+        // MongoDB
+        "mongodb.mongodb-vscode",
+        // Env files
+        "mikestead.dotenv",
+        // YAML (ZenML configs)
+        "redhat.vscode-yaml",
+        // TOML (pyproject.toml)
+        "tamasfe.even-better-toml",
+        // Git
+        "eamodio.gitlens",
+        // Jupyter (for exploration)
+        "ms-toolsai.jupyter"
+      ]
+    }
+  },
+
+  // ── Run as non-root ──────────────────────────────────────────────────────────
+  "remoteUser": "vscode",
+  "containerEnv": {
+    "PYENV_ROOT": "/home/vscode/.pyenv",
+    "PATH": "/home/vscode/.pyenv/shims:/home/vscode/.pyenv/bin:/home/vscode/.local/bin:${PATH}",
+    // macOS fork-safety fix (also needed on some Linux runners)
+    "OBJC_DISABLE_INITIALIZE_FORK_SAFETY": "YES"
+  }
+}
